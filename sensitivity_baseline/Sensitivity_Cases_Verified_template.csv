@@ -1,0 +1,17 @@
+case_id,enabled,case_order,case_family,case_label,case_value,lambda_s,lambda_b,gamma,volume_resid_multiplier,price_resid_multiplier,notes
+BASE,1,0,Baseline,Baseline,1.0,0.0,0.0,1.0,1.0,1.0,Reference case
+LS_0253,1,10,SellerRisk,lambda_s = 0.253,0.253,0.253,0.0,1.0,1.0,1.0,Seller risk only
+LS_0524,1,11,SellerRisk,lambda_s = 0.524,0.524,0.524,0.0,1.0,1.0,1.0,Seller risk only
+LS_0842,1,12,SellerRisk,lambda_s = 0.842,0.842,0.842,0.0,1.0,1.0,1.0,Seller risk only
+LB_0253,1,20,BuyerRisk,lambda_b = 0.253,0.253,0.0,0.253,1.0,1.0,1.0,Buyer risk only
+LB_0524,1,21,BuyerRisk,lambda_b = 0.524,0.524,0.0,0.524,1.0,1.0,1.0,Buyer risk only
+LB_0842,1,22,BuyerRisk,lambda_b = 0.842,0.842,0.0,0.842,1.0,1.0,1.0,Buyer risk only
+BOTH_0253,1,30,BothRisk,lambda_s = lambda_b = 0.253,0.253,0.253,0.253,1.0,1.0,1.0,Both parties risk-sensitive
+BOTH_0524,1,31,BothRisk,lambda_s = lambda_b = 0.524,0.524,0.524,0.524,1.0,1.0,1.0,Both parties risk-sensitive
+GAMMA_075,1,40,Gamma,gamma = 0.75,0.75,0.0,0.0,0.75,1.0,1.0,Lower availability-penalty scale
+GAMMA_125,1,41,Gamma,gamma = 1.25,1.25,0.0,0.0,1.25,1.0,1.0,Higher availability-penalty scale
+GAMMA_150,1,42,Gamma,gamma = 1.50,1.50,0.0,0.0,1.5,1.0,1.0,Higher availability-penalty scale
+VOL_075,1,50,VolumeVol,volume residual × 0.75,0.75,0.0,0.0,1.0,0.75,1.0,Lower generation/demand residual scale
+VOL_125,1,51,VolumeVol,volume residual × 1.25,1.25,0.0,0.0,1.0,1.25,1.0,Higher generation/demand residual scale
+PRICE_075,1,60,PriceVol,price residual × 0.75,0.75,0.0,0.0,1.0,1.0,0.75,Lower price residual scale
+PRICE_125,1,61,PriceVol,price residual × 1.25,1.25,0.0,0.0,1.0,1.0,1.25,Higher price residual scale
