@@ -1,0 +1,96 @@
+import re, glob, os, sys, numpy as np, pandas as pd, matplotlib
+matplotlib.use("Agg"); import matplotlib.pyplot as plt
+# Code_Submission root: the parent of this script's folder, or argv[2].
+CS=os.path.abspath(sys.argv[2]) if len(sys.argv)>2 else os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+OUT=sys.argv[1]; os.makedirs(OUT,exist_ok=True)
+TW=522/72.27; W95=0.95*TW; DPI=600
+plt.rcParams.update({"font.size":7,"axes.labelsize":8,"axes.titlesize":8.5,"xtick.labelsize":7,"ytick.labelsize":7,"legend.fontsize":7.5,"axes.linewidth":0.6,"lines.linewidth":1.0,"lines.markersize":3.2,"grid.linewidth":0.4,"grid.alpha":0.3})
+def save(fig,stem):
+    fig.savefig(f"{OUT}/{stem}.png",dpi=DPI); fig.savefig(f"{OUT}/{stem}.pdf"); plt.close(fig); print("wrote",stem)
+CH=["Generation--load mismatch","Seller--buyer nodal price decoupling","Buyer load--price intensification","Seller generation--price cannibalization"]
+CHT={"Generation--load mismatch":"Generation–load mismatch","Seller--buyer nodal price decoupling":"Seller–buyer nodal price\ndecoupling","Buyer load--price intensification":"Buyer load–price\nintensification","Seller generation--price cannibalization":"Seller generation–price\ncannibalization"}
+# ---------- risk-averse family ----------
+ra=pd.read_csv(CS+"/simulation_mutation_averse/Output files (Risk Averse, Mutation, Verified)/Risk_Averse_Mutation_Analysis/tables/RA_Mutation_Paired_Baseline_Changes_Long.csv",low_memory=False)
+ra=ra[ra.scenario_type=="mutation"]
+fam=ra.mutation_family_normalized.astype(str)
+print("family labels in RA table:",sorted(fam.unique()))
+famap={}
+for f in fam.unique():
+    fl=f.lower()
+    if "generation" in fl and "load" in fl or "shape" in fl: famap[f]=CH[0]
+    elif "nodal" in fl or "basis" in fl: famap[f]=CH[1]
+    elif "load" in fl and "price" in fl: famap[f]=CH[2]
+    elif "cannibal" in fl: famap[f]=CH[3]
+ra["channel"]=fam.map(famap); ra=ra.dropna(subset=["channel"])
+ra["shift"]=ra.target_shift_signed.astype(float); ra["ai"]=ra.target_shift_abs.astype(float).rank(method="dense").astype(int)-1
+SERIES=[("joint_low","joint-low ($\\lambda^S=\\lambda^B=0.253$)","o","C0"),("joint_medium","joint-medium ($\\lambda^S=\\lambda^B=0.524$)","s","C1")]
+def ra_fig(col,ylabel,stem,width,fixonly=False,scale=1.0):
+    fig,axes=plt.subplots(2,2,figsize=(width,width*0.62),dpi=DPI)
+    for ax,ch in zip(axes.ravel(),CH):
+        for rl,lab,mk,c in SERIES:
+            d=ra[(ra.channel==ch)&(ra.risk_label==rl)]
+            if fixonly: d=d[d.fix_to_fix.astype(str).str.lower().eq("true")]
+            g=d.groupby("ai")[col]; med=g.median()*scale; q1=g.quantile(.25)*scale; q3=g.quantile(.75)*scale; x=med.index.values
+            ax.fill_between(x,q1.values,q3.values,color=c,alpha=0.18,linewidth=0)
+            ax.plot(x,med.values,marker=mk,color=c,label=lab)
+        ticks=d.groupby("ai")["shift"].first()
+        ax.set_xticks(ticks.index.values); ax.set_xticklabels([f"{v:+.2f}" for v in ticks.values]); ax.set_xlim(-0.3,2.3)
+        ax.axhline(0,color="0.5",linewidth=0.5,zorder=0); ax.grid(True); ax.set_title(CHT[ch],pad=5)
+        for sp in ax.spines.values(): sp.set_linewidth(0.6)
+    gmax=max(abs(v) for ax in axes.ravel() for ln in ax.get_lines() for v in ln.get_ydata() if v==v) or 1.0
+    for ax in axes.ravel():
+        lo,hi=ax.get_ylim()
+        if abs(hi-lo)<1e-9 or all(abs(v)<1e-9 for ln in ax.get_lines() for v in ln.get_ydata()): ax.set_ylim(-0.15*gmax,0.15*gmax)
+    for ax in axes[1]: ax.set_xlabel("Requested correlation shift")
+    for ax in axes[:,0]: ax.set_ylabel(ylabel)
+    h,l=axes[0,0].get_legend_handles_labels(); fig.legend(h,l,loc="lower center",ncol=2,frameon=True,bbox_to_anchor=(0.5,-0.01))
+    fig.tight_layout(rect=(0,0.06,1,1),pad=0.4,w_pad=1.2,h_pad=1.0); save(fig,stem)
+ra_fig("delta_fixed_volume_mw","Δ Fixed-Volume quantity $q$ (MW)","Fig 6. Fixed-Volume quantity changes",W95,fixonly=True)
+ra_fig("delta_strike_price_mwh","Δ strike price ($/MWh)","Fig 7. Strike-price changes under risk aversion",W95)
+ra_fig("delta_delivered_volume_proxy_mw","Δ mean delivered volume (MW)","Fig A7. Delivered-volume changes under risk aversion",TW)
+ra_fig("delta_seller_metric","Δ seller exposure index\n(\\$ million)","Fig A8. Seller exposure changes under risk aversion",TW,scale=1e-6)
+ra_fig("delta_buyer_metric","Δ buyer exposure index\n(\\$ million)","Fig A9. Buyer exposure changes under risk aversion",TW,scale=1e-6)
+ra_fig("delta_buyer_participation_slack","Δ buyer participation slack\n(\\$ million)","Fig A10. Buyer participation slack changes",W95,scale=1e-6)
+# ---------- channel-bank lambda data for A4-A6 ----------
+B="Baseline__No_Mutation__Verified"
+ref=pd.read_csv(CS+"/simulation_mutation/Output files (Risk Neutral, Mutation, Verified)/Simulation_Best_Solutions_All_Matches.csv",low_memory=False); ref=ref[ref.scenario_name==B].set_index("match_id").sort_index()
+def stats(x):
+    fix=x.profile_type=="Fix"
+    return dict(ident=float(((x.profile_type==ref.profile_type)&(x.strike_price_mwh==ref.strike_price_mwh)&(x.volume_mw.fillna(-1)==ref.volume_mw.fillna(-1))).mean()),ppa=float(x.profile_type.isin(["Fix","AsC","AsG"]).mean()),fix=float(fix.mean()),asc=float((x.profile_type=="AsC").mean()),strike=float(x.strike_price_mwh.mean()),vol=float(x.loc[fix,"volume_mw"].mean()))
+lam={"seller":{0.0:stats(ref)},"buyer":{0.0:stats(ref)},"joint":{0.0:stats(ref)}}
+for d in sorted(glob.glob(CS+"/simulation_mutation_averse/Output files (Risk Averse, Mutation, Verified)/0*/")):
+    m=re.search(r"lambdaS_(\dp\d+)__lambdaB_(\dp\d+)",d); ls,lb=[float(v.replace("p",".")) for v in m.groups()]
+    f=d+"Simulation_Best_Solutions_All_Matches.csv"
+    if not os.path.exists(f): continue
+    x=pd.read_csv(f,low_memory=False); x=x[x.scenario_name==B].set_index("match_id").sort_index()
+    axis="seller" if lb==0 else ("buyer" if ls==0 else "joint"); lam[axis][max(ls,lb)]=stats(x)
+sens=pd.read_csv(CS+"/sensitivity_baseline/Output files (Sensitivity, No Mutation, Verified)/Sensitivity_Case_Level_Summary.csv").set_index("case_id")
+chg=pd.read_csv(CS+"/sensitivity_baseline/Output files (Sensitivity, No Mutation, Verified)/Sensitivity_Change_Summary_By_Case.csv").set_index("case_id")
+print("check: sensitivity BASE volume_mean",sens.loc["BASE","volume_mean"],"| channel ref Fix-only mean vol",round(stats(ref)["vol"],1),"| ref strike mean",round(stats(ref)["strike"],2),"vs",sens.loc["BASE","strike_mean"])
+base=sens.loc["BASE"]
+alpha={"Volume residual scale":[("VOL_075",0.75),("BASE",1.0),("VOL_125",1.25)],"Price residual scale":[("PRICE_075",0.75),("BASE",1.0),("PRICE_125",1.25)]}
+LSER=[("seller","Seller risk aversion $\\lambda^S$","o"),("buyer","Buyer risk aversion $\\lambda^B$","s"),("joint","Joint risk aversion $\\lambda^S=\\lambda^B$","^")]
+def a_fig(stem,rows):
+    fig,axes=plt.subplots(2,2,figsize=(TW,TW*0.66),dpi=DPI)
+    for r,(ylabel,lkey,akey,pct) in enumerate(rows):
+        ax=axes[r,0]
+        for axis,lab,mk in LSER:
+            ks=sorted(lam[axis]); ys=[lkey(lam[axis][k]) for k in ks]; ax.plot(ks,ys,marker=mk,label=lab)
+        ax.set_ylabel(ylabel); ax.grid(True)
+        ax2=axes[r,1]
+        for name,cases in alpha.items():
+            xs=[a for _,a in cases]; ys=[akey(sens.loc[c],chg.loc[c]) for c,_ in cases]; ax2.plot(xs,ys,marker="D" if "Volume" in name else "v",color="C4" if "Volume" in name else "C5",label=name)
+        ax2.grid(True)
+        for a in (ax,ax2):
+            if pct: a.yaxis.set_major_formatter(matplotlib.ticker.PercentFormatter(1.0,decimals=(1 if pct=="signed" else 0)))
+            if pct is True: a.set_ylim(-0.03,1.03)
+        if pct=="signed":
+            for a in (ax,ax2): a.axhline(0,color="C0",linewidth=0.6,linestyle="--")
+    axes[0,0].set_title("Risk aversion",pad=5); axes[0,1].set_title("Residual scale",pad=5)
+    axes[1,0].set_xlabel("Risk-aversion weight"); axes[1,1].set_xlabel("Residual multiplier $\\alpha$")
+    h1,l1=axes[0,0].get_legend_handles_labels(); h2,l2=axes[0,1].get_legend_handles_labels()
+    fig.legend(h1+h2,l1+l2,loc="lower center",ncol=3,frameon=True,bbox_to_anchor=(0.5,-0.005),columnspacing=1.2,handlelength=1.8)
+    fig.tight_layout(rect=(0,0.10,1,1),pad=0.4,w_pad=1.2,h_pad=1.0); save(fig,stem)
+a_fig("Fig A4. Outcome stability and PPA selection",[("Complete-outcome agreement",lambda s:s["ident"],lambda s,c:c["share_same_full_decision"],True),("PPA-selection share",lambda s:s["ppa"],lambda s,c:s["ppa_share"],True)])
+a_fig("Fig A5. Contract term sensitivity",[("Mean strike price change",lambda s:s["strike"]/lam["seller"][0.0]["strike"]-1,lambda s,c:s["strike_mean"]/base["strike_mean"]-1,"signed"),("Mean Fixed-Volume quantity change",lambda s:s["vol"]/lam["seller"][0.0]["vol"]-1,lambda s,c:s["volume_mean"]/base["volume_mean"]-1,"signed")])
+a_fig("Fig A6. PPA structure share sensitivity",[("Fixed-Volume selection share",lambda s:s["fix"],lambda s,c:s["fix_share"],True),("As-Consumed selection share",lambda s:s["asc"],lambda s,c:s["asc_share"],True)])

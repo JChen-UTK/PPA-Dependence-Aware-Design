@@ -1,0 +1,87 @@
+%% Figure 1 of the manuscript, as a standalone source.
+%% Lifted verbatim from the manuscript's tikzset block and tikzpicture on
+%% 2026-09-11, when the manuscript switched to including the rendered image.
+%% Build with: python3 build_fig1_framework.py <output_dir>
+\documentclass[border=2pt]{standalone}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{txfonts}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning}
+\newcommand{\Fix}{\mathrm{Fix}}
+\newcommand{\AsG}{\mathrm{AsG}}
+\newcommand{\AsC}{\mathrm{AsC}}
+\tikzset{
+    inputbox/.style={draw=black!70, rounded corners=1.5pt, fill=black!3,
+        align=left, text width=3.45cm, minimum height=2.25cm, inner sep=5pt},
+    stagebox/.style={draw=black!70, rounded corners=1.5pt, fill=white,
+        align=left, text width=3.65cm, minimum height=4.85cm, inner sep=5pt},
+    outbox/.style={draw=black!70, rounded corners=1.5pt, fill=black!3,
+        align=left, text width=3.65cm, minimum height=4.85cm, inner sep=5pt},
+    flow/.style={-{Latex[length=2.2mm,width=1.5mm]}, line width=0.65pt},
+    stress/.style={-{Latex[length=2.0mm,width=1.4mm]}, dashed, line width=0.6pt}
+}
+\begin{document}
+\begin{tikzpicture}[
+    font=\footnotesize
+]
+
+\node[inputbox] (contract) at (0,1.40) {%
+    \textbf{Contract menu}\\[-1pt]
+    Fixed-Volume ($\Fix$), As-Generated ($\AsG$), or As-Consumed ($\AsC$)\\
+    Strike price $\pi$\\
+    Fixed-Volume quantity $q$\\
+    Compensation terms
+};
+
+\node[inputbox] (stochastic) at (0,-1.40) {%
+    \textbf{Stochastic environment}\\[-1pt]
+    Generation $G_t$, buyer load $D_t$, seller price $P_t^S$, and buyer procurement and resale prices\\
+    Joint distribution and hourly timing
+};
+
+\node[stagebox] (settlement) at (4.55,0) {%
+    \textbf{Settlement and benchmarks}\\[2pt]
+    Delivery $Q_t^v$\\
+    PPA payment $\pi Q_t^v$\\
+    Seller settlement for $G_t-Q_t^v$\\
+    Buyer residual purchase or resale\\
+    Compensation $L_v$\\
+    No-PPA revenue and cost
+};
+
+\node[stagebox] (evaluation) at (9.15,0) {%
+    \textbf{Exposure and feasibility}\\[2pt]
+    Seller exposure $F_v^S$\\
+    Buyer exposure $F_v^B$\\
+    Mean--standard-deviation indices\\
+    Buyer participation constraint\\
+    Seller objective over feasible terms
+};
+
+\node[outbox] (selection) at (13.75,0) {%
+    \textbf{Design outcome}\\[2pt]
+    Structure and terms that minimize seller exposure among those the buyer accepts\\
+    Selected strike price and Fixed-Volume quantity when applicable\\
+    No-PPA benchmark\\
+    Seller exposure index\\
+    Buyer participation slack
+};
+
+\draw[flow] (contract.east) -- ([yshift=5mm]settlement.west);
+\draw[flow] (stochastic.east) -- ([yshift=-5mm]settlement.west);
+\draw[flow] (settlement.east) -- (evaluation.west);
+\draw[flow] (evaluation.east) -- (selection.west);
+
+\node[draw=black!60, dashed, rounded corners=1.5pt, align=left,
+      text width=9.0cm, inner sep=5pt, below=5mm of evaluation,
+      xshift=-22mm] (counterfactual) {%
+    \textbf{Dependence-channel analysis.}
+    Change how one pair of variables moves together (for example generation and load, or the two nodal prices), keep each variable's own distribution, rerun the settlement and selection steps above, and compare the selected structure, $\pi$, $q$, seller exposure, and buyer slack with the reference case.
+};
+
+\draw[stress] (stochastic.south) |- (counterfactual.west);
+\draw[stress] (counterfactual.east) -| (selection.south);
+
+\end{tikzpicture}
+\end{document}
