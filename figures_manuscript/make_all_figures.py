@@ -21,8 +21,11 @@ HERE = Path(__file__).resolve().parent
 CODE_ROOT = HERE.parent                      # Code_Submission
 
 # producer script -> the figures it writes
+# build_figs_2_3_5_redesign.py now owns Figures 2-5. rebuild_figs_2_5_labels.py
+# is kept as the record of how the superseded notebook versions were made, but it
+# is no longer run here: it would write its own Figures 2-5 over these.
 PRODUCERS = [
-    ("rebuild_figs_2_5_labels.py", "Figures 2-5",
+    ("build_figs_2_3_5_redesign.py", "Figures 2, 3, 4 and 5",
      ["--code-root", str(CODE_ROOT), "--out-dir", "{out}"]),
     ("build_print_figures.py", "Figures 6, 7 and A4-A10",
      ["{out}", str(CODE_ROOT)]),
@@ -41,7 +44,7 @@ EXPECTED = [
     "Fig 7. Strike-price changes under risk aversion.png",
     "Fig A1. Buyer load profiles.png",
     "Fig A2. Seller generation profiles.png",
-    "Fig A3. Seller-side LMP profiles.png",
+    "Fig A3. Buyer-side LMP profiles.png",
     "Fig A4. Outcome stability and PPA selection.png",
     "Fig A5. Contract term sensitivity.png",
     "Fig A6. PPA structure share sensitivity.png",

@@ -13,9 +13,10 @@ Required inputs, resolved relative to this script by default:
 * ``Generation/hourly_total_gen_all_area.csv``
 * ``Demand_LMP/OVEC_DOEX530.csv``
 
-The published Figure A3 uses the OVEC ``LOAD`` pnode file even though the
-current manuscript caption describes it as a seller-side LMP illustration.
-This script preserves the figure's actual source and validates that provenance.
+The published Figure A3 uses the OVEC ``LOAD`` pnode file, a buyer-side (load)
+zone, which is what the supplement caption describes; the file name once said
+"Seller-side" and was corrected. This script preserves the figure's actual
+source and validates that provenance.
 
 Exact raster reproduction was validated with pandas 2.2.3 and Matplotlib
 3.10.7.  Other library versions can change font rasterization or PNG metadata
@@ -43,6 +44,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Final
 
+import figure_palette as PAL
 import matplotlib
 
 matplotlib.use("Agg")
@@ -88,24 +90,24 @@ FIGURE_A1: Final[FigureSpec] = FigureSpec(
     entity_label="Load Area",
     entity_value="DUQ",
     y_label="Load (MW)",
-    box_color="sandybrown",
-    mean_color="red",
+    box_color=PAL.PROFILE_FILL["demand"],
+    mean_color=PAL.PROFILE_MEAN,
 )
 FIGURE_A2: Final[FigureSpec] = FigureSpec(
     output_name="Fig A2. Seller generation profiles.png",
     entity_label="Area",
     entity_value="MIDATL",
     y_label="Generation (MW)",
-    box_color="mediumturquoise",
-    mean_color="blue",
+    box_color=PAL.PROFILE_FILL["generation"],
+    mean_color=PAL.PROFILE_MEAN,
 )
 FIGURE_A3: Final[FigureSpec] = FigureSpec(
-    output_name="Fig A3. Seller-side LMP profiles.png",
+    output_name="Fig A3. Buyer-side LMP profiles.png",
     entity_label="Zone",
     entity_value="OVEC",
     y_label="LMP ($/MWh)",
-    box_color="lightgrey",
-    mean_color="blue",
+    box_color=PAL.PROFILE_FILL["lmp"],
+    mean_color=PAL.PROFILE_MEAN,
 )
 
 
@@ -238,7 +240,7 @@ def plot_summary(summary: pd.DataFrame, spec: FigureSpec, destination: Path, dpi
 
     plt.style.use("default")
     plt.rcParams.update({"font.size": 6, "axes.linewidth": 0.6, "lines.linewidth": 0.8})
-    figure, axes = plt.subplots(2, 2, figsize=(6.86, 4.4), sharey=True)
+    figure, axes = plt.subplots(2, 2, figsize=(522 / 72.27, 4.4), sharey=True)
 
     for index, (axis, season) in enumerate(zip(axes.flat, SEASONS, strict=True)):
         seasonal = summary.loc[season]
@@ -274,6 +276,8 @@ def plot_summary(summary: pd.DataFrame, spec: FigureSpec, destination: Path, dpi
             label="Mean",
             zorder=3,
             s=25,
+            edgecolors="white",
+            linewidths=0.5,
         )
         axis.set_xticks(HOURS)
         axis.set_xlabel("Hour", fontsize=PLOT_FONT_SIZE)

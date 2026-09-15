@@ -1,10 +1,13 @@
 import re, glob, os, sys, numpy as np, pandas as pd, matplotlib
+from matplotlib.ticker import FuncFormatter
 matplotlib.use("Agg"); import matplotlib.pyplot as plt
+import figure_palette as PAL
+PAL.apply_palette(plt)   # series that name no colour land on the palette
 # Code_Submission root: the parent of this script's folder, or argv[2].
 CS=os.path.abspath(sys.argv[2]) if len(sys.argv)>2 else os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT=sys.argv[1]; os.makedirs(OUT,exist_ok=True)
-TW=522/72.27; W95=0.95*TW; DPI=600
-plt.rcParams.update({"font.size":7,"axes.labelsize":8,"axes.titlesize":8.5,"xtick.labelsize":7,"ytick.labelsize":7,"legend.fontsize":7.5,"axes.linewidth":0.6,"lines.linewidth":1.0,"lines.markersize":3.2,"grid.linewidth":0.4,"grid.alpha":0.3})
+TW=522/72.27; DPI=600
+plt.rcParams.update(PAL.house_rcparams())
 def save(fig,stem):
     fig.savefig(f"{OUT}/{stem}.png",dpi=DPI); fig.savefig(f"{OUT}/{stem}.pdf"); plt.close(fig); print("wrote",stem)
 CH=["Generation--load mismatch","Seller--buyer nodal price decoupling","Buyer load--price intensification","Seller generation--price cannibalization"]
@@ -23,34 +26,50 @@ for f in fam.unique():
     elif "cannibal" in fl: famap[f]=CH[3]
 ra["channel"]=fam.map(famap); ra=ra.dropna(subset=["channel"])
 ra["shift"]=ra.target_shift_signed.astype(float); ra["ai"]=ra.target_shift_abs.astype(float).rank(method="dense").astype(int)-1
-SERIES=[("joint_low","joint-low ($\\lambda^S=\\lambda^B=0.253$)","o","C0"),("joint_medium","joint-medium ($\\lambda^S=\\lambda^B=0.524$)","s","C1")]
+SERIES=[("joint_low","joint-low ($\\lambda^S=\\lambda^B=0.253$)","o",PAL.BLUE),("joint_medium","joint-medium ($\\lambda^S=\\lambda^B=0.524$)","s",PAL.AMBER)]
+# Height ratio 0.58 (was 0.62): at 0.62 Figures 6 and 7 each took a page top and the
+# manuscript's Conclusion page was left 5 lines short; at 0.58 the two fit one page
+# together and every page foot in the compiled manuscript is within 8 pt (measured).
+RA_ASPECT=0.58
 def ra_fig(col,ylabel,stem,width,fixonly=False,scale=1.0):
-    fig,axes=plt.subplots(2,2,figsize=(width,width*0.62),dpi=DPI)
+    fig,axes=plt.subplots(2,2,figsize=(width,width*RA_ASPECT),dpi=DPI); span={}
     for ax,ch in zip(axes.ravel(),CH):
+        span[ax]=0.0
         for rl,lab,mk,c in SERIES:
             d=ra[(ra.channel==ch)&(ra.risk_label==rl)]
             if fixonly: d=d[d.fix_to_fix.astype(str).str.lower().eq("true")]
             g=d.groupby("ai")[col]; med=g.median()*scale; q1=g.quantile(.25)*scale; q3=g.quantile(.75)*scale; x=med.index.values
             ax.fill_between(x,q1.values,q3.values,color=c,alpha=0.18,linewidth=0)
+            span[ax]=max(span[ax],float(np.nanmax(np.abs(np.r_[med.values,q1.values,q3.values]))))
             ax.plot(x,med.values,marker=mk,color=c,label=lab)
         ticks=d.groupby("ai")["shift"].first()
-        ax.set_xticks(ticks.index.values); ax.set_xticklabels([f"{v:+.2f}" for v in ticks.values]); ax.set_xlim(-0.3,2.3)
+        ax.set_xticks(ticks.index.values); ax.set_xticklabels([f"{abs(v):.2f}" for v in ticks.values]); ax.set_xlim(-0.3,2.3)
         ax.axhline(0,color="0.5",linewidth=0.5,zorder=0); ax.grid(True); ax.set_title(CHT[ch],pad=5)
         for sp in ax.spines.values(): sp.set_linewidth(0.6)
+    # The autoscaled limits cover the bands as well as the medians, so no interquartile
+    # band runs off the frame (the strike-price bands reach -5 $/MWh under zero medians).
+    # A panel that is zero throughout, band included, gets a small symmetric range and a
+    # single zero tick. Tick labels then share one decimal width across the four panels.
     gmax=max(abs(v) for ax in axes.ravel() for ln in ax.get_lines() for v in ln.get_ydata() if v==v) or 1.0
     for ax in axes.ravel():
-        lo,hi=ax.get_ylim()
-        if abs(hi-lo)<1e-9 or all(abs(v)<1e-9 for ln in ax.get_lines() for v in ln.get_ydata()): ax.set_ylim(-0.15*gmax,0.15*gmax)
-    for ax in axes[1]: ax.set_xlabel("Requested correlation shift")
+        if span[ax]<1e-9: ax.set_ylim(-0.15*gmax,0.15*gmax); ax.set_yticks([0])
+    def _dec(v):
+        for k in range(4):
+            if abs(round(v,k)-v)<1e-9: return k
+        return 3
+    k=max([_dec(t) for ax in axes.ravel() for t in ax.get_yticks() if ax.get_ylim()[0]<=t<=ax.get_ylim()[1]] or [0])
+    fmt=FuncFormatter(lambda v,_: f"{(0.0 if abs(v)<1e-12 else v):.{k}f}".replace("-","\u2212"))
+    for ax in axes.ravel(): ax.yaxis.set_major_formatter(fmt)
+    for ax in axes[1]: ax.set_xlabel("Shift size")
     for ax in axes[:,0]: ax.set_ylabel(ylabel)
     h,l=axes[0,0].get_legend_handles_labels(); fig.legend(h,l,loc="lower center",ncol=2,frameon=True,bbox_to_anchor=(0.5,-0.01))
     fig.tight_layout(rect=(0,0.06,1,1),pad=0.4,w_pad=1.2,h_pad=1.0); save(fig,stem)
-ra_fig("delta_fixed_volume_mw","Δ Fixed-Volume quantity $q$ (MW)","Fig 6. Fixed-Volume quantity changes",W95,fixonly=True)
-ra_fig("delta_strike_price_mwh","Δ strike price ($/MWh)","Fig 7. Strike-price changes under risk aversion",W95)
+ra_fig("delta_fixed_volume_mw","Δ Fixed-Volume quantity $q$ (MW)","Fig 6. Fixed-Volume quantity changes",TW,fixonly=True)
+ra_fig("delta_strike_price_mwh","Δ strike price ($/MWh)","Fig 7. Strike-price changes under risk aversion",TW)
 ra_fig("delta_delivered_volume_proxy_mw","Δ mean delivered volume (MW)","Fig A7. Delivered-volume changes under risk aversion",TW)
 ra_fig("delta_seller_metric","Δ seller exposure index\n(\\$ million)","Fig A8. Seller exposure changes under risk aversion",TW,scale=1e-6)
 ra_fig("delta_buyer_metric","Δ buyer exposure index\n(\\$ million)","Fig A9. Buyer exposure changes under risk aversion",TW,scale=1e-6)
-ra_fig("delta_buyer_participation_slack","Δ buyer participation slack\n(\\$ million)","Fig A10. Buyer participation slack changes",W95,scale=1e-6)
+ra_fig("delta_buyer_participation_slack","Δ buyer participation slack\n(\\$ million)","Fig A10. Buyer participation slack changes",TW,scale=1e-6)
 # ---------- channel-bank lambda data for A4-A6 ----------
 B="Baseline__No_Mutation__Verified"
 ref=pd.read_csv(CS+"/simulation_mutation/Output files (Risk Neutral, Mutation, Verified)/Simulation_Best_Solutions_All_Matches.csv",low_memory=False); ref=ref[ref.scenario_name==B].set_index("match_id").sort_index()
@@ -71,26 +90,36 @@ base=sens.loc["BASE"]
 alpha={"Volume residual scale":[("VOL_075",0.75),("BASE",1.0),("VOL_125",1.25)],"Price residual scale":[("PRICE_075",0.75),("BASE",1.0),("PRICE_125",1.25)]}
 LSER=[("seller","Seller risk aversion $\\lambda^S$","o"),("buyer","Buyer risk aversion $\\lambda^B$","s"),("joint","Joint risk aversion $\\lambda^S=\\lambda^B$","^")]
 def a_fig(stem,rows):
-    fig,axes=plt.subplots(2,2,figsize=(TW,TW*0.66),dpi=DPI)
+    fig,axes=plt.subplots(2,2,figsize=(TW,TW*0.60),dpi=DPI)
     for r,(ylabel,lkey,akey,pct) in enumerate(rows):
         ax=axes[r,0]
         for axis,lab,mk in LSER:
-            ks=sorted(lam[axis]); ys=[lkey(lam[axis][k]) for k in ks]; ax.plot(ks,ys,marker=mk,label=lab)
-        ax.set_ylabel(ylabel); ax.grid(True)
+            ks=sorted(lam[axis]); ys=[lkey(lam[axis][k]) for k in ks]
+            ax.plot(ks,ys,marker=mk,markerfacecolor="white",markeredgewidth=0.9,label=lab)
+        ax.set_ylabel(ylabel)
         ax2=axes[r,1]
         for name,cases in alpha.items():
-            xs=[a for _,a in cases]; ys=[akey(sens.loc[c],chg.loc[c]) for c,_ in cases]; ax2.plot(xs,ys,marker="D" if "Volume" in name else "v",color="C4" if "Volume" in name else "C5",label=name)
-        ax2.grid(True)
+            xs=[a for _,a in cases]; ys=[akey(sens.loc[c],chg.loc[c]) for c,_ in cases]
+            ax2.plot(xs,ys,marker="D" if "Volume" in name else "v",markerfacecolor="white",
+                     markeredgewidth=0.9,color=PAL.WINE if "Volume" in name else PAL.INDIGO,label=name)
         for a in (ax,ax2):
+            PAL.tidy(a)
             if pct: a.yaxis.set_major_formatter(matplotlib.ticker.PercentFormatter(1.0,decimals=(1 if pct=="signed" else 0)))
             if pct is True: a.set_ylim(-0.03,1.03)
         if pct=="signed":
-            for a in (ax,ax2): a.axhline(0,color="C0",linewidth=0.6,linestyle="--")
-    axes[0,0].set_title("Risk aversion",pad=5); axes[0,1].set_title("Residual scale",pad=5)
+            for a in (ax,ax2): a.axhline(0,color=PAL.MUTED,linewidth=0.6,linestyle="--")
+        # Where the two columns of a row already span the same range, the right
+        # column repeats the tick labels for nothing; Figure 2 drops them too.
+        if np.allclose(ax.get_ylim(),ax2.get_ylim()):
+            ax2.set_yticklabels([]); ax2.spines["left"].set_visible(False); ax2.tick_params(axis="y",length=0)
+    axes[0,0].set_title("Risk aversion",pad=4); axes[0,1].set_title("Residual scale",pad=4)
     axes[1,0].set_xlabel("Risk-aversion weight"); axes[1,1].set_xlabel("Residual multiplier $\\alpha$")
     h1,l1=axes[0,0].get_legend_handles_labels(); h2,l2=axes[0,1].get_legend_handles_labels()
-    fig.legend(h1+h2,l1+l2,loc="lower center",ncol=3,frameon=True,bbox_to_anchor=(0.5,-0.005),columnspacing=1.2,handlelength=1.8)
-    fig.tight_layout(rect=(0,0.10,1,1),pad=0.4,w_pad=1.2,h_pad=1.0); save(fig,stem)
+    leg=fig.legend(h1+h2,l1+l2,loc="lower left",ncol=5,bbox_to_anchor=(0.010,0.905),
+               bbox_transform=fig.transFigure,columnspacing=0.7,handlelength=1.2,handletextpad=0.35)
+    PAL.fit_legend(fig,leg)
+    fig.subplots_adjust(left=0.090,right=0.995,bottom=0.105,top=0.840,wspace=0.16,hspace=0.30)
+    save(fig,stem)
 a_fig("Fig A4. Outcome stability and PPA selection",[("Complete-outcome agreement",lambda s:s["ident"],lambda s,c:c["share_same_full_decision"],True),("PPA-selection share",lambda s:s["ppa"],lambda s,c:s["ppa_share"],True)])
 a_fig("Fig A5. Contract term sensitivity",[("Mean strike price change",lambda s:s["strike"]/lam["seller"][0.0]["strike"]-1,lambda s,c:s["strike_mean"]/base["strike_mean"]-1,"signed"),("Mean Fixed-Volume quantity change",lambda s:s["vol"]/lam["seller"][0.0]["vol"]-1,lambda s,c:s["volume_mean"]/base["volume_mean"]-1,"signed")])
 a_fig("Fig A6. PPA structure share sensitivity",[("Fixed-Volume selection share",lambda s:s["fix"],lambda s,c:s["fix_share"],True),("As-Consumed selection share",lambda s:s["asc"],lambda s,c:s["asc_share"],True)])

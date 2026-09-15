@@ -62,7 +62,18 @@ def build_script(notebook: Path, work_dir: Path) -> str:
         if found != expected:
             raise SystemExit(f"expected {expected} occurrence(s) of {old!r}, found {found}")
         code = code.replace(old, new)
-    return 'import matplotlib\nmatplotlib.use("Agg")\n' + code
+    # Figure 4 names no colour and takes the first entry of the default
+    # cycle, so the cycle is set here to keep it on the paper's palette.
+    preamble = (
+        'import matplotlib\n'
+        'matplotlib.use("Agg")\n'
+        'import sys\n'
+        f'sys.path.insert(0, {str(Path(__file__).resolve().parent)!r})\n'
+        'import matplotlib.pyplot as plt\n'
+        'import figure_palette as PAL\n'
+        'PAL.apply_palette(plt)\n'
+    )
+    return preamble + code
 
 
 def main() -> None:
