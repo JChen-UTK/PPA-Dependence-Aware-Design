@@ -302,10 +302,22 @@ the manuscript's `images/` folder.
 
 | Figure | Producer |
 |---|---|
-| 1 | `build_fig1_framework.py` (needs `pdflatex`) |
-| 2-5 | `rebuild_figs_2_5_labels.py` (drives `simulation_mutation/plot_contract_price_volume_utility_minimal_update.ipynb` read-only) |
+| 1 | `build_fig1_framework.py` (needs `pdflatex`; the diagram source is `fig1_framework.tex`) |
+| 2-5 | `build_figs_2_3_5_redesign.py` (reads the journal tables written by steps 5 and 6) |
 | 6, 7, A4-A10 | `build_print_figures.py` |
 | A1-A3 | `generate_figures_A1_A3_print.py` |
+
+All four producers import `figure_palette.py`, which holds the single colour
+palette and the shared typography and axis style, so a change there reaches every
+figure at once. `build_figs_2_3_5_redesign.py --verify` reprints the selection
+shares, medians and quartiles quoted in Sections 5.2 and 5.3 of the manuscript
+next to the values the figures are drawn from.
+
+`rebuild_figs_2_5_labels.py` produced the earlier version of Figures 2-5 by
+driving `simulation_mutation/plot_contract_price_volume_utility_minimal_update.ipynb`
+read-only. It is superseded by `build_figs_2_3_5_redesign.py`, is no longer called
+by `make_all_figures.py`, and is kept only as the record of how those figures were
+made before the redesign.
 
 ---
 
