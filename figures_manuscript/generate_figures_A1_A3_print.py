@@ -102,10 +102,10 @@ FIGURE_A2: Final[FigureSpec] = FigureSpec(
     mean_color=PAL.PROFILE_MEAN,
 )
 FIGURE_A3: Final[FigureSpec] = FigureSpec(
-    output_name="Fig A3. Buyer-side LMP profiles.png",
+    output_name="Fig A3. Buyer-node price profiles.png",
     entity_label="Zone",
     entity_value="OVEC",
-    y_label="LMP ($/MWh)",
+    y_label="Nodal price ($/MWh)",
     box_color=PAL.PROFILE_FILL["lmp"],
     mean_color=PAL.PROFILE_MEAN,
 )
@@ -296,6 +296,9 @@ def plot_summary(summary: pd.DataFrame, spec: FigureSpec, destination: Path, dpi
     for _ax in axes.ravel():
         _ax.set_xticks(range(0, 24, 4)); _ax.set_xticklabels([str(h) for h in range(0, 24, 4)])
     figure.savefig(destination, dpi=dpi, bbox_inches="tight")
+    # Elsevier prefers vector artwork (EPS/PDF) for line drawings, so the same
+    # figure is written as a PDF with the fonts embedded for the submission files.
+    figure.savefig(destination.with_suffix(".pdf"), bbox_inches="tight")
     plt.close(figure)
 
 

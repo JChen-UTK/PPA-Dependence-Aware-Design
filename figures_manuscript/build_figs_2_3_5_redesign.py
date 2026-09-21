@@ -433,7 +433,7 @@ def build_fig3(tables: dict[str, pd.DataFrame], out_dir: Path) -> Path:
 # into something that looked like a large effect.
 FIG4_METRICS = [
     ("delta_strike_price_mwh", "Δ strike price\n(\\$/MWh)"),
-    ("delta_fixed_volume_mw", "Δ Fixed-Volume quantity\n(MW; Fix→Fix)"),
+    ("delta_fixed_volume_mw", "Δ contracted volume\n(MW; Fix→Fix)"),
     ("delta_mean_delivered_volume_proxy_mw", "Δ mean delivered\nvolume (MW)"),
 ]
 

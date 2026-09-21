@@ -30,19 +30,19 @@
     \textbf{Contract menu}\\[-1pt]
     Fixed-Volume ($\Fix$), As-Generated ($\AsG$), or As-Consumed ($\AsC$)\\
     Strike price $\pi$\\
-    Fixed-Volume quantity $q$\\
+    Contracted volume $q$\\
     Compensation terms
 };
 
 \node[inputbox] (stochastic) at (0,-1.40) {%
-    \textbf{Stochastic environment}\\[-1pt]
-    Generation $G_t$, buyer load $D_t$, seller price $P_t^S$, and buyer procurement and resale prices\\
+    \textbf{Joint distribution}\\[-1pt]
+    Generation $G_t$, buyer load $D_t$, seller-node price $P_t^S$, and buyer procurement and resale prices\\
     Joint distribution and hourly timing
 };
 
 \node[stagebox] (settlement) at (4.55,0) {%
     \textbf{Settlement and benchmarks}\\[2pt]
-    Delivery $Q_t^v$\\
+    Delivered volume $Q_t^v$\\
     PPA payment $\pi Q_t^v$\\
     Seller settlement for $G_t-Q_t^v$\\
     Buyer residual purchase or resale\\
@@ -62,7 +62,7 @@
 \node[outbox] (selection) at (13.75,0) {%
     \textbf{Design outcome}\\[2pt]
     Structure and terms that minimize seller exposure among those the buyer accepts\\
-    Selected strike price and Fixed-Volume quantity when applicable\\
+    Selected strike price and contracted volume when applicable\\
     No-PPA benchmark\\
     Seller exposure index\\
     Buyer participation slack

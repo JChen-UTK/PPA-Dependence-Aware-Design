@@ -8,7 +8,7 @@ substitutions below, and runs the code in a temporary working directory so
 nothing in Code_Submission is written.
 
 Label changes (2026-09-10):
-  fig_contract_terms_by_family   "Fixed volume"      -> "Fixed-Volume quantity"
+  fig_contract_terms_by_family   "Fixed volume"      -> "contracted volume"
   fig_contract_terms_by_family   "M ean delivered"   -> "Mean delivered"   (typo)
   fig_objective_slack_movement   "Buyer slack"       -> "Buyer participation slack"
   figs 2 and 4 x axis            "Correlation shift" -> "Requested correlation shift"
@@ -36,7 +36,7 @@ OUT_SUBDIR = "Output files (Risk Neutral, Mutation, Verified)/Contract_Price_Vol
 
 # (old, new, expected number of occurrences in the notebook's code)
 SUBSTITUTIONS = [
-    ('"Δ Fixed volume\\n(MW; Fix→Fix)"', '"Δ Fixed-Volume quantity\\n(MW; Fix→Fix)"', 1),
+    ('"Δ Fixed volume\\n(MW; Fix→Fix)"', '"Δ contracted volume\\n(MW; Fix→Fix)"', 1),
     ('"Δ M ean delivered\\nvolume (MW)"', '"Δ Mean delivered\\nvolume (MW)"', 1),
     ('"Δ Buyer slack"', '"Δ Buyer participation slack"', 1),
     # Figures 2 and 4; matches "Requested correlation shift" in Figs 6, 7 and A5-A10.
