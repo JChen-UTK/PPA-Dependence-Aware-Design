@@ -1,5 +1,5 @@
 import re, glob, os, sys, numpy as np, pandas as pd, matplotlib
-from matplotlib.ticker import FuncFormatter
+from matplotlib.ticker import FuncFormatter, MaxNLocator
 matplotlib.use("Agg"); import matplotlib.pyplot as plt
 import figure_palette as PAL
 PAL.apply_palette(plt)   # series that name no colour land on the palette
@@ -32,27 +32,35 @@ SERIES=[("joint_low","joint-low ($\\lambda^S=\\lambda^B=0.253$)","o",PAL.BLUE),(
 # together and every page foot in the compiled manuscript is within 8 pt (measured).
 RA_ASPECT=0.58
 def ra_fig(col,ylabel,stem,width,fixonly=False,scale=1.0):
-    fig,axes=plt.subplots(2,2,figsize=(width,width*RA_ASPECT),dpi=DPI); span={}
+    fig,axes=plt.subplots(2,2,figsize=(width,width*RA_ASPECT),dpi=DPI); span={}; arts={}
     for ax,ch in zip(axes.ravel(),CH):
         span[ax]=0.0
         for rl,lab,mk,c in SERIES:
             d=ra[(ra.channel==ch)&(ra.risk_label==rl)]
             if fixonly: d=d[d.fix_to_fix.astype(str).str.lower().eq("true")]
             g=d.groupby("ai")[col]; med=g.median()*scale; q1=g.quantile(.25)*scale; q3=g.quantile(.75)*scale; x=med.index.values
-            ax.fill_between(x,q1.values,q3.values,color=c,alpha=0.18,linewidth=0)
+            band=ax.fill_between(x,q1.values,q3.values,color=c,alpha=0.18,linewidth=0)
             span[ax]=max(span[ax],float(np.nanmax(np.abs(np.r_[med.values,q1.values,q3.values]))))
-            ax.plot(x,med.values,marker=mk,color=c,label=lab)
+            line,=ax.plot(x,med.values,marker=mk,color=c,label=lab); arts[(ax,rl)]=(band,line,med.values,q1.values,q3.values)
         ticks=d.groupby("ai")["shift"].first()
         ax.set_xticks(ticks.index.values); ax.set_xticklabels([f"{abs(v):.2f}" for v in ticks.values]); ax.set_xlim(-0.3,2.3)
         ax.axhline(0,color="0.5",linewidth=0.5,zorder=0); ax.grid(True); ax.set_title(CHT[ch],pad=5)
         for sp in ax.spines.values(): sp.set_linewidth(0.6)
+    # When the two settings give identical medians and quartiles in every panel (Figure 7),
+    # one series would hide the other: draw one and say so in the legend.
+    same=all(all(np.allclose(arts[(ax,SERIES[0][0])][i],arts[(ax,SERIES[1][0])][i],equal_nan=True) for i in (2,3,4)) for ax in axes.ravel())
+    if same:
+        for ax in axes.ravel():
+            arts[(ax,SERIES[0][0])][0].remove(); arts[(ax,SERIES[0][0])][1].remove()
+            arts[(ax,SERIES[1][0])][1].set_label("joint-low ($\\lambda^S=\\lambda^B=0.253$) and joint-medium ($\\lambda^S=\\lambda^B=0.524$), identical")
+        print("identical series, one drawn:",stem)
     # The autoscaled limits cover the bands as well as the medians, so no interquartile
     # band runs off the frame (the strike-price bands reach -5 $/MWh under zero medians).
-    # A panel that is zero throughout, band included, gets a small symmetric range and a
-    # single zero tick. Tick labels then share one decimal width across the four panels.
+    # A panel that is zero throughout, band included, gets a small symmetric range with
+    # three ticks, so the scale is readable. Tick labels then share one decimal width.
     gmax=max(abs(v) for ax in axes.ravel() for ln in ax.get_lines() for v in ln.get_ydata() if v==v) or 1.0
     for ax in axes.ravel():
-        if span[ax]<1e-9: ax.set_ylim(-0.15*gmax,0.15*gmax); ax.set_yticks([0])
+        if span[ax]<1e-9: ax.set_ylim(-0.15*gmax,0.15*gmax); ax.yaxis.set_major_locator(MaxNLocator(nbins=4,symmetric=True))
     def _dec(v):
         for k in range(4):
             if abs(round(v,k)-v)<1e-9: return k
@@ -62,7 +70,7 @@ def ra_fig(col,ylabel,stem,width,fixonly=False,scale=1.0):
     for ax in axes.ravel(): ax.yaxis.set_major_formatter(fmt)
     for ax in axes[1]: ax.set_xlabel("Shift size")
     for ax in axes[:,0]: ax.set_ylabel(ylabel)
-    h,l=axes[0,0].get_legend_handles_labels(); fig.legend(h,l,loc="lower center",ncol=2,frameon=True,bbox_to_anchor=(0.5,-0.01))
+    h,l=axes[0,0].get_legend_handles_labels(); fig.legend(h,l,loc="lower center",ncol=1 if same else 2,frameon=True,bbox_to_anchor=(0.5,-0.01))
     fig.tight_layout(rect=(0,0.06,1,1),pad=0.4,w_pad=1.2,h_pad=1.0); save(fig,stem)
 ra_fig("delta_fixed_volume_mw","Δ contracted volume $q$ (MW)","Fig 6. Contracted volume changes",TW,fixonly=True)
 ra_fig("delta_strike_price_mwh","Δ strike price ($/MWh)","Fig 7. Strike-price changes under risk aversion",TW)
