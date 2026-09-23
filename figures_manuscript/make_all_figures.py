@@ -45,7 +45,7 @@ EXPECTED = [
     "Fig A1. Buyer load profiles.png",
     "Fig A2. Seller generation profiles.png",
     "Fig A3. Buyer-node price profiles.png",
-    "Fig A4. Complete-outcome agreement and PPA selection.png",
+    "Fig A4. Complete-contract agreement and PPA selection.png",
     "Fig A5. Contract term sensitivity.png",
     "Fig A6. PPA structure share sensitivity.png",
     "Fig A7. Delivered-volume changes under risk aversion.png",

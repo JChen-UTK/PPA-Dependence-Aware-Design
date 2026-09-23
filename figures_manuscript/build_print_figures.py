@@ -121,13 +121,13 @@ def a_fig(stem,rows):
         if np.allclose(ax.get_ylim(),ax2.get_ylim()):
             ax2.set_yticklabels([]); ax2.spines["left"].set_visible(False); ax2.tick_params(axis="y",length=0)
     axes[0,0].set_title("Risk aversion",pad=4); axes[0,1].set_title("Residual scale",pad=4)
-    axes[1,0].set_xlabel("Risk-aversion weight"); axes[1,1].set_xlabel("Residual multiplier $\\alpha$")
+    axes[1,0].set_xlabel("Risk-aversion weight"); axes[1,1].set_xlabel("Residual scale $\\alpha$")
     h1,l1=axes[0,0].get_legend_handles_labels(); h2,l2=axes[0,1].get_legend_handles_labels()
     leg=fig.legend(h1+h2,l1+l2,loc="lower left",ncol=5,bbox_to_anchor=(0.010,0.905),
                bbox_transform=fig.transFigure,columnspacing=0.7,handlelength=1.2,handletextpad=0.35)
     PAL.fit_legend(fig,leg)
     fig.subplots_adjust(left=0.090,right=0.995,bottom=0.105,top=0.840,wspace=0.16,hspace=0.30)
     save(fig,stem)
-a_fig("Fig A4. Complete-outcome agreement and PPA selection",[("Complete-outcome agreement",lambda s:s["ident"],lambda s,c:c["share_same_full_decision"],True),("PPA-selection share",lambda s:s["ppa"],lambda s,c:s["ppa_share"],True)])
+a_fig("Fig A4. Complete-contract agreement and PPA selection",[("Complete-contract agreement",lambda s:s["ident"],lambda s,c:c["share_same_full_decision"],True),("PPA-selection share",lambda s:s["ppa"],lambda s,c:s["ppa_share"],True)])
 a_fig("Fig A5. Contract term sensitivity",[("Mean strike price change",lambda s:s["strike"]/lam["seller"][0.0]["strike"]-1,lambda s,c:s["strike_mean"]/base["strike_mean"]-1,"signed"),("Mean contracted volume change",lambda s:s["vol"]/lam["seller"][0.0]["vol"]-1,lambda s,c:s["volume_mean"]/base["volume_mean"]-1,"signed")])
 a_fig("Fig A6. PPA structure share sensitivity",[("Fixed-Volume selection share",lambda s:s["fix"],lambda s,c:s["fix_share"],True),("As-Consumed selection share",lambda s:s["asc"],lambda s,c:s["asc_share"],True)])
