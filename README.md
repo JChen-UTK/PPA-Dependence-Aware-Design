@@ -18,12 +18,13 @@ files.
 | `sensitivity_baseline/` | reference-set sensitivity cases |
 | `simulation_mutation/` | channel-adjusted sample generation and risk-neutral selection |
 | `simulation_mutation_averse/` | risk-averse counterparts |
-| `figures_manuscript/` | rebuilds all seventeen manuscript and supplementary figures |
+| `figures_manuscript/` | rebuilds all eighteen manuscript and supplementary figures |
 
 The only non-code files are
 `sensitivity_baseline/Sensitivity_Cases_Verified_template.csv` (sensitivity case
-definitions) and `figures_manuscript/fig1_framework.tex` (the Figure 1 diagram
-source).
+definitions), `figures_manuscript/fig1_framework.tex` and
+`figures_manuscript/fig2_simulation.tex` (the Figure 1 and Figure 2 diagram
+sources).
 
 The pipeline also needs two small workbooks that nothing in the code generates:
 `Locational Information.xlsx` and `Seller_Buyer_Match_Table.xlsx`. They are not
@@ -33,7 +34,7 @@ the PJM downloads.
 ## Environment
 
 Python 3.11 or later with `numpy`, `pandas`, `scipy`, `matplotlib`, `openpyxl`
-and `jupyter`. Figure 1 additionally needs `pdflatex` on the PATH (TeX Live or
+and `jupyter`. Figures 1 and 2 additionally need `pdflatex` on the PATH (TeX Live or
 MacTeX) with the `txfonts` package.
 
 Scripts and notebooks resolve the package root automatically; no path editing is
@@ -296,24 +297,25 @@ From `figures_manuscript/`:
 
     python make_all_figures.py <output_dir>
 
-This writes all seventeen figures under the exact file names the manuscript's
+This writes all eighteen figures under the exact file names the manuscript's
 `\includegraphics` keys use, so the output directory can be copied straight over
 the manuscript's `images/` folder.
 
 | Figure | Producer |
 |---|---|
 | 1 | `build_fig1_framework.py` (needs `pdflatex`; the diagram source is `fig1_framework.tex`) |
-| 2-5 | `build_figs_2_3_5_redesign.py` (reads the journal tables written by steps 5 and 6) |
-| 6, 7, A4-A10 | `build_print_figures.py` |
+| 2 | `build_fig2_simulation.py` (needs `pdflatex`; the diagram source is `fig2_simulation.tex`) |
+| 3-6 | `build_figs_2_3_5_redesign.py` (reads the journal tables written by steps 5 and 6) |
+| 7, 8, A4-A10 | `build_print_figures.py` |
 | A1-A3 | `generate_figures_A1_A3_print.py` |
 
-All four producers import `figure_palette.py`, which holds the single colour
+The three plotting producers import `figure_palette.py`, which holds the single colour
 palette and the shared typography and axis style, so a change there reaches every
 figure at once. `build_figs_2_3_5_redesign.py --verify` reprints the selection
 shares, medians and quartiles quoted in Sections 5.2 and 5.3 of the manuscript
 next to the values the figures are drawn from.
 
-`rebuild_figs_2_5_labels.py` produced the earlier version of Figures 2-5 by
+`rebuild_figs_2_5_labels.py` produced the earlier version of Figures 3-6 (numbered 2-5 at the time) by
 driving `simulation_mutation/plot_contract_price_volume_utility_minimal_update.ipynb`
 read-only. It is superseded by `build_figs_2_3_5_redesign.py`, is no longer called
 by `make_all_figures.py`, and is kept only as the record of how those figures were
