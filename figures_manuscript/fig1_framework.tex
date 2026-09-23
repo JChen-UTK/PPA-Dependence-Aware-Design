@@ -1,6 +1,9 @@
 %% Figure 1 of the manuscript, as a standalone source.
 %% Lifted verbatim from the manuscript's tikzset block and tikzpicture on
 %% 2026-09-11, when the manuscript switched to including the rendered image.
+%% Redrawn on 2026-09-23: the dependence-channel box moved to Figure 2
+%% (fig2_simulation.tex), the boxes have explicit equal heights, hyphenation is
+%% off inside boxes, and every arrow is horizontal or vertical.
 %% Build with: python3 build_fig1_framework.py <output_dir>
 \documentclass[border=2pt]{standalone}
 \usepackage{amsmath}
@@ -8,80 +11,53 @@
 \usepackage{txfonts}
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,positioning}
-\newcommand{\Fix}{\mathrm{Fix}}
-\newcommand{\AsG}{\mathrm{AsG}}
-\newcommand{\AsC}{\mathrm{AsC}}
 \tikzset{
-    inputbox/.style={draw=black!70, rounded corners=1.5pt, fill=black!3,
-        align=left, text width=3.45cm, minimum height=2.25cm, inner sep=5pt},
-    stagebox/.style={draw=black!70, rounded corners=1.5pt, fill=white,
-        align=left, text width=3.65cm, minimum height=4.85cm, inner sep=5pt},
-    outbox/.style={draw=black!70, rounded corners=1.5pt, fill=black!3,
-        align=left, text width=3.65cm, minimum height=4.85cm, inner sep=5pt},
-    flow/.style={-{Latex[length=2.2mm,width=1.5mm]}, line width=0.65pt},
-    stress/.style={-{Latex[length=2.0mm,width=1.4mm]}, dashed, line width=0.6pt}
+    box/.style={draw=black!70, rounded corners=1.5pt, align=left, inner sep=4pt,
+        execute at begin node={\hyphenpenalty=10000\exhyphenpenalty=10000\relax}},
+    inbox/.style={box, fill=black!3},
+    stage/.style={box, fill=white},
+    outbox/.style={box, fill=black!3},
+    flow/.style={-{Latex[length=2.2mm,width=1.5mm]}, line width=0.65pt}
 }
 \begin{document}
-\begin{tikzpicture}[
-    font=\footnotesize
-]
+\begin{tikzpicture}[font=\footnotesize]
 
-\node[inputbox] (contract) at (0,1.40) {%
+\node[inbox, text width=5.2cm, minimum height=2.35cm, anchor=north] (contract) at (0.0,2.15) {%
     \textbf{Contract menu}\\[-1pt]
-    Fixed-Volume ($\Fix$), As-Generated ($\AsG$), or As-Consumed ($\AsC$)\\
-    Strike price $\pi$\\
-    Contracted volume $q$\\
+    Fixed-Volume, As-Generated, or As-Consumed\\
+    Strike price $\pi$; contracted volume $q$ under \mbox{Fixed-Volume}\\
     Compensation terms (fixed inputs)
 };
-
-\node[inputbox] (stochastic) at (0,-1.40) {%
+\node[inbox, text width=5.2cm, minimum height=1.7cm, anchor=south] (joint) at (0.0,-2.15) {%
     \textbf{Joint distribution}\\[-1pt]
-    Generation $G_t$, buyer load $D_t$, seller-node price $P_t^S$, and buyer procurement and resale prices\\
-    Each variable's own distribution and how the variables move together
+    Generation $G_t$, buyer load $D_t$, seller-node price $P_t^S$, and the buyer's procurement and resale prices, hour by hour
 };
-
-\node[stagebox] (settlement) at (4.55,0) {%
-    \textbf{Settlement and benchmarks}\\[2pt]
+\node[stage, text width=3.35cm, minimum height=4.3cm] (settle) at (5.055,0) {%
+    \textbf{Settlement and benchmarks}\\[-1pt]
     Delivered volume $Q_t^v$\\
     PPA payment $\pi Q_t^v$\\
-    Seller settlement for $G_t-Q_t^v$\\
-    Buyer residual purchase or resale\\
+    Seller settlement of $G_t-Q_t^v$ at the seller-node price\\
+    Buyer residual procurement or surplus resale\\
     Compensation $L_v$\\
-    No-PPA revenue and cost
+    No-PPA revenue and cost as the benchmarks
 };
-
-\node[stagebox] (evaluation) at (9.15,0) {%
-    \textbf{Exposure and feasibility}\\[2pt]
-    Seller exposure $F_v^S$\\
-    Buyer exposure $F_v^B$\\
+\node[stage, text width=3.35cm, minimum height=4.3cm] (expo) at (9.185,0) {%
+    \textbf{Exposure and feasibility}\\[-1pt]
+    Seller exposure $F_v^S$ and buyer exposure $F_v^B$, each relative to no-PPA\\
     Mean--standard-deviation indices\\
-    Buyer participation constraint\\
-    Seller objective over feasible terms
+    Buyer participation: buyer index no greater than zero\\
+    Seller objective: lowest seller index over the feasible terms
 };
-
-\node[outbox] (selection) at (13.75,0) {%
-    \textbf{Design outcome}\\[2pt]
-    Structure and terms that minimize seller exposure among those the buyer accepts\\
-    Selected strike price and contracted volume when applicable\\
-    No-PPA benchmark\\
+\node[outbox, text width=3.35cm, minimum height=4.3cm] (out) at (13.315,0) {%
+    \textbf{Design outcome}\\[-1pt]
+    Structure, strike price, and contracted volume when applicable, minimizing seller exposure among the alternatives the buyer accepts\\
+    No-PPA retained as an alternative\\
     Seller exposure index\\
-    Buyer participation slack
+    Buyer participation slack (how far the buyer index lies below zero)
 };
-
-\draw[flow] (contract.east) -- ([yshift=5mm]settlement.west);
-\draw[flow] (stochastic.east) -- ([yshift=-5mm]settlement.west);
-\draw[flow] (settlement.east) -- (evaluation.west);
-\draw[flow] (evaluation.east) -- (selection.west);
-
-\node[draw=black!60, dashed, rounded corners=1.5pt, align=left,
-      text width=9.0cm, inner sep=5pt, below=5mm of evaluation,
-      xshift=-22mm] (counterfactual) {%
-    \textbf{Dependence-channel analysis.}
-    Change how one pair of variables moves together (for example generation and load, or the two nodal prices), keep each variable's own distribution, rerun the settlement and selection steps above, and compare the selected structure, $\pi$, $q$, seller exposure, and buyer participation slack with those selected on the reference set.
-};
-
-\draw[stress] (stochastic.south) |- (counterfactual.west);
-\draw[stress] (counterfactual.east) -| (selection.south);
-
+\draw[flow] (contract.east) -- (contract.east -| settle.west);
+\draw[flow] (joint.east) -- (joint.east -| settle.west);
+\draw[flow] (settle.east) -- (expo.west);
+\draw[flow] (expo.east) -- (out.west);
 \end{tikzpicture}
 \end{document}

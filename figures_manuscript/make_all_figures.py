@@ -1,10 +1,11 @@
 r"""Rebuild every manuscript figure into one directory.
 
-Each of the four producers below writes PNG files whose names are exactly the
+Each of the five producers below writes PNG files whose names are exactly the
 `\includegraphics` keys used by the manuscript, so the output directory can be
 copied straight over `PPA_Manuscript/images/`.
 
-Figure 1 is a TikZ diagram; its source is `fig1_framework.tex` in this folder.
+Figures 1 and 2 are TikZ diagrams; their sources are `fig1_framework.tex` and
+`fig2_simulation.tex` in this folder.
 
     python3 make_all_figures.py <output_dir>
 
@@ -21,13 +22,14 @@ HERE = Path(__file__).resolve().parent
 CODE_ROOT = HERE.parent                      # Code_Submission
 
 # producer script -> the figures it writes
-# build_figs_2_3_5_redesign.py now owns Figures 2-5. rebuild_figs_2_5_labels.py
+# build_figs_2_3_5_redesign.py now owns Figures 3-6 (numbered 2-5 before the
+# 2026-09-23 renumbering; script names keep the old numbers). rebuild_figs_2_5_labels.py
 # is kept as the record of how the superseded notebook versions were made, but it
-# is no longer run here: it would write its own Figures 2-5 over these.
+# is no longer run here: it would write the old Figures 2-5 over these.
 PRODUCERS = [
-    ("build_figs_2_3_5_redesign.py", "Figures 2, 3, 4 and 5",
+    ("build_figs_2_3_5_redesign.py", "Figures 3, 4, 5 and 6",
      ["--code-root", str(CODE_ROOT), "--out-dir", "{out}"]),
-    ("build_print_figures.py", "Figures 6, 7 and A4-A10",
+    ("build_print_figures.py", "Figures 7, 8 and A4-A10",
      ["{out}", str(CODE_ROOT)]),
     ("generate_figures_A1_A3_print.py", "Figures A1-A3",
      ["--data-dir", str(CODE_ROOT / "Input data and files" / "PJM Data"),
@@ -36,12 +38,13 @@ PRODUCERS = [
 
 EXPECTED = [
     "Fig 1. Framework decision flow.png",
-    "Fig 2. PPA structure shares.png",
-    "Fig 3. Severe structure transitions.png",
-    "Fig 4. Contract term and delivery changes.png",
-    "Fig 5. Seller exposure and buyer slack.png",
-    "Fig 6. Contracted volume changes.png",
-    "Fig 7. Strike-price changes under risk aversion.png",
+    "Fig 2. Simulation framework.png",
+    "Fig 3. PPA structure shares.png",
+    "Fig 4. Severe structure transitions.png",
+    "Fig 5. Contract term and delivery changes.png",
+    "Fig 6. Seller exposure and buyer slack.png",
+    "Fig 7. Contracted volume changes.png",
+    "Fig 8. Strike-price changes under risk aversion.png",
     "Fig A1. Buyer load profiles.png",
     "Fig A2. Seller generation profiles.png",
     "Fig A3. Buyer-node price profiles.png",
@@ -63,6 +66,9 @@ def main() -> None:
 
     print("--- build_fig1_framework.py: Figure 1")
     subprocess.run([sys.executable, str(HERE / "build_fig1_framework.py"), str(out)],
+                   check=True, cwd=str(HERE))
+    print("--- build_fig2_simulation.py: Figure 2")
+    subprocess.run([sys.executable, str(HERE / "build_fig2_simulation.py"), str(out)],
                    check=True, cwd=str(HERE))
 
     for script, what, args in PRODUCERS:

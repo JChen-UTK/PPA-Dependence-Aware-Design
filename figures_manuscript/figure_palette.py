@@ -106,7 +106,7 @@ def house_rcparams() -> dict:
     """The style every figure in the paper is drawn with.
 
     Kept here rather than in each producer so that a change to the typography
-    or the axis furniture reaches all seventeen figures at once.
+    or the axis furniture reaches all eighteen figures at once.
     """
     return {
         "font.size": BASE_FS,

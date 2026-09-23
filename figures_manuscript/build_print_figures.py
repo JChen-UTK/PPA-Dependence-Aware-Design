@@ -27,7 +27,7 @@ for f in fam.unique():
 ra["channel"]=fam.map(famap); ra=ra.dropna(subset=["channel"])
 ra["shift"]=ra.target_shift_signed.astype(float); ra["ai"]=ra.target_shift_abs.astype(float).rank(method="dense").astype(int)-1
 SERIES=[("joint_low","joint-low ($\\lambda^S=\\lambda^B=0.253$)","o",PAL.BLUE),("joint_medium","joint-medium ($\\lambda^S=\\lambda^B=0.524$)","s",PAL.AMBER)]
-# Height ratio 0.58 (was 0.62): at 0.62 Figures 6 and 7 each took a page top and the
+# Height ratio 0.58 (was 0.62): at 0.62 Figures 7 and 8 each took a page top and the
 # manuscript's Conclusion page was left 5 lines short; at 0.58 the two fit one page
 # together and every page foot in the compiled manuscript is within 8 pt (measured).
 RA_ASPECT=0.58
@@ -46,7 +46,7 @@ def ra_fig(col,ylabel,stem,width,fixonly=False,scale=1.0):
         ax.set_xticks(ticks.index.values); ax.set_xticklabels([f"{abs(v):.2f}" for v in ticks.values]); ax.set_xlim(-0.3,2.3)
         ax.axhline(0,color="0.5",linewidth=0.5,zorder=0); ax.grid(True); ax.set_title(CHT[ch],pad=5)
         for sp in ax.spines.values(): sp.set_linewidth(0.6)
-    # When the two settings give identical medians and quartiles in every panel (Figure 7),
+    # When the two settings give identical medians and quartiles in every panel (Figure 8),
     # one series would hide the other: draw one and say so in the legend.
     same=all(all(np.allclose(arts[(ax,SERIES[0][0])][i],arts[(ax,SERIES[1][0])][i],equal_nan=True) for i in (2,3,4)) for ax in axes.ravel())
     if same:
@@ -72,8 +72,8 @@ def ra_fig(col,ylabel,stem,width,fixonly=False,scale=1.0):
     for ax in axes[:,0]: ax.set_ylabel(ylabel)
     h,l=axes[0,0].get_legend_handles_labels(); fig.legend(h,l,loc="lower center",ncol=1 if same else 2,frameon=True,bbox_to_anchor=(0.5,-0.01))
     fig.tight_layout(rect=(0,0.06,1,1),pad=0.4,w_pad=1.2,h_pad=1.0); save(fig,stem)
-ra_fig("delta_fixed_volume_mw","Δ contracted volume $q$ (MW)","Fig 6. Contracted volume changes",TW,fixonly=True)
-ra_fig("delta_strike_price_mwh","Δ strike price ($/MWh)","Fig 7. Strike-price changes under risk aversion",TW)
+ra_fig("delta_fixed_volume_mw","Δ contracted volume $q$ (MW)","Fig 7. Contracted volume changes",TW,fixonly=True)
+ra_fig("delta_strike_price_mwh","Δ strike price ($/MWh)","Fig 8. Strike-price changes under risk aversion",TW)
 ra_fig("delta_delivered_volume_proxy_mw","Δ mean delivered volume (MW)","Fig A7. Delivered-volume changes under risk aversion",TW)
 ra_fig("delta_seller_metric","Δ seller exposure index\n(\\$ million)","Fig A8. Seller exposure changes under risk aversion",TW,scale=1e-6)
 ra_fig("delta_buyer_metric","Δ buyer exposure index\n(\\$ million)","Fig A9. Buyer exposure changes under risk aversion",TW,scale=1e-6)
@@ -117,7 +117,7 @@ def a_fig(stem,rows):
         if pct=="signed":
             for a in (ax,ax2): a.axhline(0,color=PAL.MUTED,linewidth=0.6,linestyle="--")
         # Where the two columns of a row already span the same range, the right
-        # column repeats the tick labels for nothing; Figure 2 drops them too.
+        # column repeats the tick labels for nothing; Figure 3 drops them too.
         if np.allclose(ax.get_ylim(),ax2.get_ylim()):
             ax2.set_yticklabels([]); ax2.spines["left"].set_visible(False); ax2.tick_params(axis="y",length=0)
     axes[0,0].set_title("Risk aversion",pad=4); axes[0,1].set_title("Residual scale",pad=4)

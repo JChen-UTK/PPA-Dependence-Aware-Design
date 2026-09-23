@@ -1,17 +1,17 @@
-"""Redesigned Figures 2, 3 and 5 at printed width.
+"""Redesigned Figures 3, 4 and 6 (Figures 2, 3 and 5 before the 2026-09-23 renumbering) at printed width.
 
 Each figure answers a different question, so each uses a different chart family.
 
-  Figure 2  What the text quotes is a CHANGE: "the Fixed-Volume share increases
+  Figure 3  What the text quotes is a CHANGE: "the Fixed-Volume share increases
             by 5.6%, 9.5% and 9.5% of the configurations". The shipped figure
             plots levels in a 2x2 line grid, so the reader has to subtract.
             Redrawn as one horizontal diverging bar chart: twelve rows, one per
             channel and shift size, three bars per row, zero = the reference.
-  Figure 3  What the text reads off it is a FLOW: "mainly through
+  Figure 4  What the text reads off it is a FLOW: "mainly through
             As-Consumed-to-Fixed transitions", "the larger gross movement out of
             Fixed-Volume is toward As-Consumed". Redrawn as a 2x2 of alluvial
             diagrams, ribbon width = number of configurations moving.
-  Figure 5  The only figure about the JOINT seller-buyer outcome; Figure 4
+  Figure 6  The only figure about the JOINT seller-buyer outcome; Figure 5
             already carries the marginal distributions. Kept as a scatter in a
             2x2, but the four panels now share one symmetric-log axis pair in
             $ million instead of four different linear ranges with a 1e8
@@ -86,8 +86,8 @@ STRUCTURE_LONG = {
     "AsG": "As-Generated",
 }
 
-# Figure 3 writes the structure beside a narrow stack block, so it keeps the
-# abbreviation there; Figure 2 has room in its panel titles and spells it out.
+# Figure 4 writes the structure beside a narrow stack block, so it keeps the
+# abbreviation there; Figure 3 has room in its panel titles and spells it out.
 
 SHIFT_LEVELS = [0.1, 0.3, 0.5]
 SHIFT_NAME = {0.1: "mild", 0.3: "moderate", 0.5: "severe"}
@@ -193,7 +193,7 @@ def shift_label(sign: float, magnitude: float) -> str:
 
 
 # ----------------------------------------------------------------------------
-# Figure 2 — how far each selected share moves off the reference
+# Figure 3 — how far each selected share moves off the reference
 # ----------------------------------------------------------------------------
 
 # The requested shift is an ordered dose (reference, mild, moderate, severe), so
@@ -207,7 +207,7 @@ def shift_label(sign: float, magnitude: float) -> str:
 # by dash pattern alone did not work at this panel size. These four are an
 # Okabe-Ito subset, every pair clear of the dichromat floor, with a distinct
 # marker as a second cue. Colour therefore means channel in this figure and
-# contract structure in Figure 3; each figure carries its own key, and the panel
+# contract structure in Figure 4; each figure carries its own key, and the panel
 # titles here name the structures.
 
 
@@ -267,11 +267,11 @@ def build_fig2(tables: dict[str, pd.DataFrame], out_dir: Path) -> Path:
                      bbox_transform=fig.transFigure, ncol=2, columnspacing=1.6, handletextpad=0.5)
     fit_legend(fig, leg)
 
-    return save(fig, out_dir, "Fig 2. PPA structure shares")
+    return save(fig, out_dir, "Fig 3. PPA structure shares")
 
 
 # ----------------------------------------------------------------------------
-# Figure 3 — alluvial flows: which configurations move, and where to
+# Figure 4 — alluvial flows: which configurations move, and where to
 # ----------------------------------------------------------------------------
 
 def ribbon(ax, x0, x1, y0_lo, y0_hi, y1_lo, y1_hi, color, alpha):
@@ -419,15 +419,15 @@ def build_fig3(tables: dict[str, pd.DataFrame], out_dir: Path) -> Path:
 
     _fit_x_to_content(fig, axes)
 
-    return save(fig, out_dir, "Fig 3. Severe structure transitions")
+    return save(fig, out_dir, "Fig 4. Severe structure transitions")
 
 
 # ----------------------------------------------------------------------------
-# Figure 4 — contract-term and delivery responses, one colour per channel
+# Figure 5 — contract-term and delivery responses, one colour per channel
 # ----------------------------------------------------------------------------
 
 # Each column is one dependence channel and wears that channel's colour, the
-# same one it has as a curve in Figure 2, so a reader who has learnt the channel
+# same one it has as a curve in Figure 3, so a reader who has learnt the channel
 # colours there keeps them here. Rows share a y axis: on the shipped figure every
 # panel was scaled independently, which magnified a channel that barely responds
 # into something that looked like a large effect.
@@ -514,11 +514,11 @@ def build_fig4(tables: dict[str, pd.DataFrame], out_dir: Path) -> Path:
                      bbox_transform=fig.transFigure, ncol=3, columnspacing=1.4)
     fit_legend(fig, leg)
 
-    return save(fig, out_dir, "Fig 4. Contract term and delivery changes")
+    return save(fig, out_dir, "Fig 5. Contract term and delivery changes")
 
 
 # ----------------------------------------------------------------------------
-# Figure 5 — the joint seller/buyer movement, on one comparable scale
+# Figure 6 — the joint seller/buyer movement, on one comparable scale
 # ----------------------------------------------------------------------------
 
 def symlog_axis(ax, which: str, linthresh: float, limit: float) -> None:
@@ -608,7 +608,7 @@ def build_fig5(tables: dict[str, pd.DataFrame], out_dir: Path) -> Path:
     axes[0].legend(handles=handles, loc="lower left", bbox_to_anchor=(-0.075, 1.115),
                    ncol=5, handletextpad=0.3, columnspacing=1.1)
 
-    return save(fig, out_dir, "Fig 5. Seller exposure and buyer slack")
+    return save(fig, out_dir, "Fig 6. Seller exposure and buyer slack")
 
 
 # ----------------------------------------------------------------------------
