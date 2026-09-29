@@ -14,7 +14,7 @@ Each figure answers a different question, so each uses a different chart family.
   Figure 6  The only figure about the JOINT seller-buyer outcome; Figure 5
             already carries the marginal distributions. Kept as a scatter in a
             2x2, but the four panels now share one symmetric-log axis pair in
-            $ million instead of four different linear ranges with a 1e8
+            $ thousand at the case scale instead of four different linear ranges with a 1e8
             multiplier, and each quadrant carries the exact share of
             configurations in it.
 
@@ -43,7 +43,7 @@ import numpy as np
 import pandas as pd
 from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
-from matplotlib.ticker import FixedLocator, PercentFormatter
+from matplotlib.ticker import FixedLocator, FuncFormatter
 
 from figure_palette import (ANNOT_FS, BASE_FS, CHANNEL_COLOR, CHANNEL_MARKER, GRID,
                             INK, MUTED, SHIFT_COLOR, STRUCTURE_COLOR, fit_legend,
@@ -238,9 +238,9 @@ def build_fig2(tables: dict[str, pd.DataFrame], out_dir: Path) -> Path:
         ax.set_xlim(-0.3, 3.3)
         ax.set_ylim(-32, 32)
         ax.set_yticks(np.arange(-30, 31, 10))
-        # The values are already in percentage points, so the tick carries the
-        # unit and the axis title does not have to spell it out.
-        ax.yaxis.set_major_formatter(PercentFormatter(xmax=100, decimals=0))
+        # The values are percentage points of the 126 configurations; the axis title
+        # names the unit, so the ticks are plain numbers (2026-09-29).
+        ax.yaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:.0f}".replace("-", "\u2212")))
         ax.yaxis.grid(True, zorder=0)
         ax.set_axisbelow(True)
         ax.tick_params(axis="x", length=0, pad=2)
@@ -251,7 +251,7 @@ def build_fig2(tables: dict[str, pd.DataFrame], out_dir: Path) -> Path:
             ax.spines["left"].set_visible(False)
             ax.tick_params(axis="y", length=0)
 
-    axes[0].set_ylabel("Change in selected share\nfrom the reference")
+    axes[0].set_ylabel("Change in selected share\nfrom the reference\n(percentage points)")
     fig.text((left + right) / 2, 0.035, "Shift size",
              ha="center", va="bottom", fontsize=BASE_FS)
 
@@ -431,10 +431,14 @@ def build_fig3(tables: dict[str, pd.DataFrame], out_dir: Path) -> Path:
 # colours there keeps them here. Rows share a y axis: on the shipped figure every
 # panel was scaled independently, which magnified a channel that barely responds
 # into something that looked like a large effect.
+# Case scale (manuscript Section 5.1, 2026-09-29): the PJM case is reported at one-thousandth of the
+# regional generation and zonal load. Exposures are proportional to generation, load and contracted
+# volume, so an unscaled value in MW or $ million equals the scaled value in kW or $ thousand. The
+# plotted numbers are therefore the unscaled outputs as they stand; only the unit labels say kW and $ thousand.
 FIG4_METRICS = [
     ("delta_strike_price_mwh", "Δ strike price\n(\\$/MWh)"),
-    ("delta_fixed_volume_mw", "Δ contracted volume\n(MW; Fix→Fix)"),
-    ("delta_mean_delivered_volume_proxy_mw", "Δ mean delivered\nvolume (MW)"),
+    ("delta_fixed_volume_mw", "Δ contracted volume\n(kW; Fix→Fix)"),
+    ("delta_mean_delivered_volume_proxy_mw", "Δ mean delivered\nvolume (kW)"),
 ]
 
 
@@ -534,8 +538,8 @@ def symlog_axis(ax, which: str, linthresh: float, limit: float) -> None:
 
 def build_fig5(tables: dict[str, pd.DataFrame], out_dir: Path) -> Path:
     long = tables["long"].copy()
-    long["dx"] = long.delta_seller_metric / 1e6              # $ million
-    long["dy"] = long.delta_buyer_participation_slack / 1e6  # $ million
+    long["dx"] = long.delta_seller_metric / 1e6              # $ thousand at the case scale (see the note above FIG4_METRICS)
+    long["dy"] = long.delta_buyer_participation_slack / 1e6  # $ thousand at the case scale
 
     fig = plt.figure(figsize=(PRINT_WIDTH_IN, 4.95))
     left, right, bottom, top = 0.093, 0.995, 0.072, 0.895
@@ -592,9 +596,9 @@ def build_fig5(tables: dict[str, pd.DataFrame], out_dir: Path) -> Path:
         if ai < 2:
             ax.set_xticklabels([])
 
-    fig.text(0.012, bottom + ph + row_gap / 2, "Δ buyer participation slack (\\$ million)",
+    fig.text(0.012, bottom + ph + row_gap / 2, "Δ buyer participation slack (\\$ thousand)",
              rotation=90, ha="left", va="center", fontsize=BASE_FS)
-    fig.text((left + right) / 2, 0.012, "Δ seller exposure index (\\$ million)",
+    fig.text((left + right) / 2, 0.012, "Δ seller exposure index (\\$ thousand)",
              ha="center", va="bottom", fontsize=BASE_FS)
     # The leading entry carries no marker; it names what the colours encode
     # without a legend title, which would cost a second line.

@@ -32,19 +32,23 @@ SERIES=[("joint_low","joint-low ($\\lambda^S=\\lambda^B=0.253$)","o",PAL.BLUE),(
 # together and every page foot in the compiled manuscript is within 8 pt (measured).
 RA_ASPECT=0.58
 def ra_fig(col,ylabel,stem,width,fixonly=False,scale=1.0):
-    fig,axes=plt.subplots(2,2,figsize=(width,width*RA_ASPECT),dpi=DPI); span={}; arts={}
+    fig,axes=plt.subplots(2,2,figsize=(width,width*RA_ASPECT),dpi=DPI); span={}; arts={}; counts={}
     for ax,ch in zip(axes.ravel(),CH):
         span[ax]=0.0
         for rl,lab,mk,c in SERIES:
             d=ra[(ra.channel==ch)&(ra.risk_label==rl)]
             if fixonly: d=d[d.fix_to_fix.astype(str).str.lower().eq("true")]
-            g=d.groupby("ai")[col]; med=g.median()*scale; q1=g.quantile(.25)*scale; q3=g.quantile(.75)*scale; x=med.index.values
+            g=d.groupby("ai")[col]; med=g.median()*scale; q1=g.quantile(.25)*scale; q3=g.quantile(.75)*scale; x=med.index.values; counts[(ax,rl)]=g.count()
             band=ax.fill_between(x,q1.values,q3.values,color=c,alpha=0.18,linewidth=0)
             span[ax]=max(span[ax],float(np.nanmax(np.abs(np.r_[med.values,q1.values,q3.values]))))
             line,=ax.plot(x,med.values,marker=mk,color=c,label=lab); arts[(ax,rl)]=(band,line,med.values,q1.values,q3.values)
         ticks=d.groupby("ai")["shift"].first()
         ax.set_xticks(ticks.index.values); ax.set_xticklabels([f"{abs(v):.2f}" for v in ticks.values]); ax.set_xlim(-0.3,2.3)
         ax.axhline(0,color="0.5",linewidth=0.5,zorder=0); ax.grid(True); ax.set_title(CHT[ch],pad=5)
+        if fixonly:   # configurations retaining Fixed-Volume in both sets, one count per setting (2026-09-29)
+            for xi in ticks.index.values:
+                ax.annotate("n="+", ".join(str(int(counts[(ax,rl)].get(xi,0))) for rl,_,_,_ in SERIES),xy=(xi,0),xycoords=("data","axes fraction"),
+                            xytext=(0,-16),textcoords="offset points",ha="center",va="top",fontsize=5.5,color=PAL.MUTED,annotation_clip=False)
         for sp in ax.spines.values(): sp.set_linewidth(0.6)
     # When the two settings give identical medians and quartiles in every panel (Figure 8),
     # one series would hide the other: draw one and say so in the legend.
@@ -60,24 +64,31 @@ def ra_fig(col,ylabel,stem,width,fixonly=False,scale=1.0):
     # three ticks, so the scale is readable. Tick labels then share one decimal width.
     gmax=max(abs(v) for ax in axes.ravel() for ln in ax.get_lines() for v in ln.get_ydata() if v==v) or 1.0
     for ax in axes.ravel():
-        if span[ax]<1e-9: ax.set_ylim(-0.15*gmax,0.15*gmax); ax.yaxis.set_major_locator(MaxNLocator(nbins=4,symmetric=True))
+        if span[ax]<1e-9:   # a panel that is zero throughout gets a small symmetric range with whole-number ticks
+            lim=max(1.0,float(np.ceil(0.15*gmax))); ax.set_ylim(-lim,lim); ax.yaxis.set_major_locator(MaxNLocator(nbins=4,symmetric=True,integer=True))
     def _dec(v):
         for k in range(4):
             if abs(round(v,k)-v)<1e-9: return k
         return 3
-    k=max([_dec(t) for ax in axes.ravel() for t in ax.get_yticks() if ax.get_ylim()[0]<=t<=ax.get_ylim()[1]] or [0])
-    fmt=FuncFormatter(lambda v,_: f"{(0.0 if abs(v)<1e-12 else v):.{k}f}".replace("-","\u2212"))
-    for ax in axes.ravel(): ax.yaxis.set_major_formatter(fmt)
-    for ax in axes[1]: ax.set_xlabel("Shift size")
+    # One decimal width per axis, the width its own ticks need, so a panel with whole-number ticks prints
+    # whole numbers even when another panel needs a decimal (2026-09-29).
+    for ax in axes.ravel():
+        k=max([_dec(t) for t in ax.get_yticks() if ax.get_ylim()[0]<=t<=ax.get_ylim()[1]] or [0])
+        ax.yaxis.set_major_formatter(FuncFormatter(lambda v,_,k=k: f"{(0.0 if abs(v)<1e-12 else v):.{k}f}".replace("-","\u2212")))
+    for ax in axes[1]: ax.set_xlabel("Shift size",labelpad=16 if fixonly else None)
     for ax in axes[:,0]: ax.set_ylabel(ylabel)
     h,l=axes[0,0].get_legend_handles_labels(); fig.legend(h,l,loc="lower center",ncol=1 if same else 2,frameon=True,bbox_to_anchor=(0.5,-0.01))
-    fig.tight_layout(rect=(0,0.06,1,1),pad=0.4,w_pad=1.2,h_pad=1.0); save(fig,stem)
-ra_fig("delta_fixed_volume_mw","Δ contracted volume $q$ (MW)","Fig 7. Contracted volume changes",TW,fixonly=True)
+    fig.tight_layout(rect=(0,0.06,1,1),pad=0.4,w_pad=1.2,h_pad=3.0 if fixonly else 1.0); save(fig,stem)
+# Case scale (manuscript Section 5.1, 2026-09-29): the PJM case is reported at one-thousandth of the
+# regional generation and zonal load. Exposures are proportional to generation, load and contracted
+# volume, so an unscaled value in MW or $ million equals the scaled value in kW or $ thousand. The
+# plotted numbers are therefore the unscaled outputs as they stand; only the unit labels say kW and $ thousand.
+ra_fig("delta_fixed_volume_mw","Δ contracted volume $q$ (kW)","Fig 7. Contracted volume changes",TW,fixonly=True)
 ra_fig("delta_strike_price_mwh","Δ strike price ($/MWh)","Fig 8. Strike-price changes under risk aversion",TW)
-ra_fig("delta_delivered_volume_proxy_mw","Δ mean delivered volume (MW)","Fig A7. Delivered-volume changes under risk aversion",TW)
-ra_fig("delta_seller_metric","Δ seller exposure index\n(\\$ million)","Fig A8. Seller exposure changes under risk aversion",TW,scale=1e-6)
-ra_fig("delta_buyer_metric","Δ buyer exposure index\n(\\$ million)","Fig A9. Buyer exposure changes under risk aversion",TW,scale=1e-6)
-ra_fig("delta_buyer_participation_slack","Δ buyer participation slack\n(\\$ million)","Fig A10. Buyer participation slack changes",TW,scale=1e-6)
+ra_fig("delta_delivered_volume_proxy_mw","Δ mean delivered volume (kW)","Fig A7. Delivered-volume changes under risk aversion",TW)
+ra_fig("delta_seller_metric","Δ seller exposure index\n(\\$ thousand)","Fig A8. Seller exposure changes under risk aversion",TW,scale=1e-6)
+ra_fig("delta_buyer_metric","Δ buyer exposure index\n(\\$ thousand)","Fig A9. Buyer exposure changes under risk aversion",TW,scale=1e-6)
+# Fig A10 (buyer participation slack) was dropped on 2026-09-29: slack is the negative of the buyer index, so it mirrored Fig A9.
 # ---------- channel-bank lambda data for A4-A6 ----------
 B="Baseline__No_Mutation__Verified"
 ref=pd.read_csv(CS+"/simulation_mutation/Output files (Risk Neutral, Mutation, Verified)/Simulation_Best_Solutions_All_Matches.csv",low_memory=False); ref=ref[ref.scenario_name==B].set_index("match_id").sort_index()
@@ -98,7 +109,7 @@ base=sens.loc["BASE"]
 alpha={"Volume residual scale":[("VOL_075",0.75),("BASE",1.0),("VOL_125",1.25)],"Price residual scale":[("PRICE_075",0.75),("BASE",1.0),("PRICE_125",1.25)]}
 LSER=[("seller","Seller risk aversion $\\lambda^S$","o"),("buyer","Buyer risk aversion $\\lambda^B$","s"),("joint","Joint risk aversion $\\lambda^S=\\lambda^B$","^")]
 def a_fig(stem,rows):
-    fig,axes=plt.subplots(2,2,figsize=(TW,TW*0.60),dpi=DPI)
+    nr=len(rows); fig,axes=plt.subplots(nr,2,figsize=(TW,TW*(0.60 if nr==2 else 0.36)),dpi=DPI,squeeze=False)
     for r,(ylabel,lkey,akey,pct) in enumerate(rows):
         ax=axes[r,0]
         for axis,lab,mk in LSER:
@@ -121,13 +132,14 @@ def a_fig(stem,rows):
         if np.allclose(ax.get_ylim(),ax2.get_ylim()):
             ax2.set_yticklabels([]); ax2.spines["left"].set_visible(False); ax2.tick_params(axis="y",length=0)
     axes[0,0].set_title("Risk aversion",pad=4); axes[0,1].set_title("Residual scale",pad=4)
-    axes[1,0].set_xlabel("Risk-aversion weight"); axes[1,1].set_xlabel("Residual scale $\\alpha$")
+    axes[nr-1,0].set_xlabel("Risk-aversion weight"); axes[nr-1,1].set_xlabel("Residual scale $\\alpha$")
     h1,l1=axes[0,0].get_legend_handles_labels(); h2,l2=axes[0,1].get_legend_handles_labels()
-    leg=fig.legend(h1+h2,l1+l2,loc="lower left",ncol=5,bbox_to_anchor=(0.010,0.905),
+    leg=fig.legend(h1+h2,l1+l2,loc="lower left",ncol=5,bbox_to_anchor=(0.010,0.905 if nr==2 else 0.845),
                bbox_transform=fig.transFigure,columnspacing=0.7,handlelength=1.2,handletextpad=0.35)
     PAL.fit_legend(fig,leg)
-    fig.subplots_adjust(left=0.090,right=0.995,bottom=0.105,top=0.840,wspace=0.16,hspace=0.30)
+    fig.subplots_adjust(left=0.090,right=0.995,bottom=0.105 if nr==2 else 0.19,top=0.840 if nr==2 else 0.76,wspace=0.16,hspace=0.30)
     save(fig,stem)
-a_fig("Fig A4. Complete-contract agreement and PPA selection",[("Complete-contract agreement",lambda s:s["ident"],lambda s,c:c["share_same_full_decision"],True),("PPA-selection share",lambda s:s["ppa"],lambda s,c:s["ppa_share"],True)])
+# The PPA-selection share row was dropped on 2026-09-29: it is 100% in every case (stated in Supplementary Section S4).
+a_fig("Fig A4. Complete-contract agreement and PPA selection",[("Complete-contract agreement",lambda s:s["ident"],lambda s,c:c["share_same_full_decision"],True)])
 a_fig("Fig A5. Contract term sensitivity",[("Mean strike price change",lambda s:s["strike"]/lam["seller"][0.0]["strike"]-1,lambda s,c:s["strike_mean"]/base["strike_mean"]-1,"signed"),("Mean contracted volume change",lambda s:s["vol"]/lam["seller"][0.0]["vol"]-1,lambda s,c:s["volume_mean"]/base["volume_mean"]-1,"signed")])
 a_fig("Fig A6. PPA structure share sensitivity",[("Fixed-Volume selection share",lambda s:s["fix"],lambda s,c:s["fix_share"],True),("As-Consumed selection share",lambda s:s["asc"],lambda s,c:s["asc_share"],True)])

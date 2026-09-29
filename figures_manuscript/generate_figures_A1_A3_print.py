@@ -55,6 +55,8 @@ import pandas as pd
 
 
 SEASONS: Final[tuple[str, ...]] = ("Q1", "Q2", "Q3", "Q4")
+# Panel titles name the months of each block rather than the Q1-Q4 codes (2026-09-29).
+SEASON_LABEL: Final[dict[str, str]] = {"Q1": "Dec\u2013Feb", "Q2": "Mar\u2013May", "Q3": "Jun\u2013Aug", "Q4": "Sep\u2013Nov"}
 HOURS: Final[tuple[int, ...]] = tuple(range(24))
 PLOT_FONT_SIZE: Final[int] = 6
 MONTH_TO_SEASON: Final[dict[int, str]] = {
@@ -284,7 +286,7 @@ def plot_summary(summary: pd.DataFrame, spec: FigureSpec, destination: Path, dpi
         if index % 2 == 0:
             axis.set_ylabel(spec.y_label, fontsize=PLOT_FONT_SIZE)
         axis.set_title(
-            f"{season} - {spec.entity_label}: {spec.entity_value}",
+            f"{SEASON_LABEL[season]}, {spec.entity_label.lower()} {spec.entity_value}",
             fontsize=PLOT_FONT_SIZE,
         )
         axis.tick_params(axis="both", labelsize=PLOT_FONT_SIZE)

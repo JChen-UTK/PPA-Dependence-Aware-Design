@@ -29,7 +29,7 @@ CODE_ROOT = HERE.parent                      # Code_Submission
 PRODUCERS = [
     ("build_figs_2_3_5_redesign.py", "Figures 3, 4, 5 and 6",
      ["--code-root", str(CODE_ROOT), "--out-dir", "{out}"]),
-    ("build_print_figures.py", "Figures 7, 8 and A4-A10",
+    ("build_print_figures.py", "Figures 7, 8 and A4-A9",
      ["{out}", str(CODE_ROOT)]),
     ("generate_figures_A1_A3_print.py", "Figures A1-A3",
      ["--data-dir", str(CODE_ROOT / "Input data and files" / "PJM Data"),
@@ -54,7 +54,6 @@ EXPECTED = [
     "Fig A7. Delivered-volume changes under risk aversion.png",
     "Fig A8. Seller exposure changes under risk aversion.png",
     "Fig A9. Buyer exposure changes under risk aversion.png",
-    "Fig A10. Buyer participation slack changes.png",
 ]
 
 
