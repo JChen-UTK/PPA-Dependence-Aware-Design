@@ -31,6 +31,14 @@ The pipeline also needs two small workbooks that nothing in the code generates:
 shipped; **Step 0b below gives their full schema so you can rebuild them** from
 the PJM downloads.
 
+## Units in the paper
+
+The simulations use the regional generation and zonal load as downloaded, so their outputs give volumes in MW
+and exposures in dollars. The paper reports the case at one-thousandth of those totals (Section 5.1). Every
+exposure is proportional to generation, load and contracted volume, so the scaled case selects the same volume
+structures and strike prices, and an output of X MW or $X million reads as X kW or $X thousand in the paper.
+Prices are unchanged. `figures_manuscript/` plots the outputs as they are and labels them kW and $ thousand.
+
 ## Environment
 
 Python 3.11 or later with `numpy`, `pandas`, `scipy`, `matplotlib`, `openpyxl`
@@ -262,6 +270,14 @@ if the case definitions change, then run:
 import. `run_sensitivity_parallel_codex_signed_prices.py` is a parallel runner
 for the same cases.
 
+What Supplementary Section S4 takes from this step: only the residual-scale cases (`VOL_*`, `PRICE_*`), all at
+lambda = 0. Its risk-aversion rows and panels come from the reference sets of `simulation_mutation_averse/`,
+not from the `LS_*`, `LB_*` and `BOTH_*` cases here. `verified_simulation_engine.py` carries the formulation
+that preceded the paper's: an hourly exposure index and an As-Generated penalty priced at `gamma` times the 95th
+percentile of the procurement price. At lambda = 0 the hourly and contract-period indices rank candidates
+identically, and no As-Generated candidate wins in the residual-scale cases under either penalty rule
+(checked 2026-09-29), so those cases match the paper's formulation; the engine's lambda > 0 cases do not.
+
 ### Step 5. Dependence channels, risk-neutral
 
 In `simulation_mutation/`:
@@ -306,7 +322,7 @@ the manuscript's `images/` folder.
 | 1 | `build_fig1_framework.py` (needs `pdflatex`; the diagram source is `fig1_framework.tex`) |
 | 2 | `build_fig2_simulation.py` (needs `pdflatex`; the diagram source is `fig2_simulation.tex`) |
 | 3-6 | `build_figs_2_3_5_redesign.py` (reads the journal tables written by steps 5 and 6) |
-| 7, 8, A4-A10 | `build_print_figures.py` |
+| 7, 8, A4-A9 | `build_print_figures.py` |
 | A1-A3 | `generate_figures_A1_A3_print.py` |
 
 The three plotting producers import `figure_palette.py`, which holds the single colour
