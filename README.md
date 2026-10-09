@@ -13,7 +13,7 @@ files.
 | Folder | What it does |
 |---|---|
 | `Input data and files/PJM Data/` | three notebooks that clean the raw PJM downloads |
-| `process_and_realization/` | builds match files, fits marginals, estimates dependence, draws the scenario bank |
+| `process_and_realization/` | builds match files, fits marginals, estimates dependence, draws the reference sets |
 | `simulation_baseline/` | reference (no-channel) contract selection |
 | `sensitivity_baseline/` | reference-set sensitivity cases |
 | `simulation_mutation/` | channel-adjusted sample generation and risk-neutral selection |
@@ -223,7 +223,7 @@ In `Input data and files/PJM Data/`, run:
    (adds `total_generation_mw` as solar plus wind)
 3. `LMP Processing.ipynb` -> `Gen_LMP/` and `Demand_LMP/`
 
-### Step 2. Build the scenario bank
+### Step 2. Build the reference sets
 
 In `process_and_realization/`, run in this order:
 
@@ -234,7 +234,7 @@ In `process_and_realization/`, run in this order:
    -> `Input data and files/Marginal_Fit/`
 3. `extract_correlations.py` — estimates the copula correlation banks
    -> `Input data and files/Correlation/`
-4. `sample_realizations.py` — draws the reference scenario bank
+4. `sample_realizations.py` — draws the reference sets
    -> `Input data and files/Simplified baseline realized samples/`
 
 `add_columns_quick.py`, `add_metadata_to_samples.py`,
@@ -358,7 +358,7 @@ condition, while the evaluation permits signed spreads.
 **Naming.** `FE` in file and column names is the **seller exposure index** of the
 paper. The abbreviation does not appear in the manuscript.
 
-**Reproducibility.** The scenario bank is drawn with fixed seeds recorded in the
+**Reproducibility.** The reference sets are drawn with fixed seeds recorded in the
 run-summary JSON that `sample_realizations.py` writes alongside its output. A
 rerun of steps 2-6 reproduces the reported selections; expected buyer exposure
 depends on the markup draw, so state the draw when comparing exposure levels
